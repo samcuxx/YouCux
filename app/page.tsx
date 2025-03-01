@@ -1,33 +1,47 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, BarChart, Search, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart,
+  FileText,
+  MessageSquare,
+  Sparkles,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)]">
+    <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="flex-1 flex items-center justify-center pb-8 pt-6 md:pb-12 md:pt-10 lg:py-32">
+      <section className="flex items-center justify-center pb-8 pt-6 md:pb-12 md:pt-10 lg:py-32">
         <div className="container flex max-w-[64rem] flex-col items-center gap-4 text-center">
+          <Badge variant="outline" className="mb-2">
+            Introducing AI Script Assistant
+          </Badge>
           <h1 className="font-bold tracking-tight text-3xl sm:text-5xl md:text-6xl lg:text-7xl">
-            Optimize Your <span className="text-primary">YouTube Content</span>{" "}
-            with AI
+            Create Engaging{" "}
+            <span className="text-primary">YouTube Scripts</span> with AI
           </h1>
           <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
-            Analyze and optimize your YouTube videos with advanced AI. Get
-            instant insights, SEO recommendations, and content optimization
-            suggestions.
+            Transform your video ideas into professional scripts with our AI
+            assistant. Get instant feedback, suggestions, and optimize your
+            content for maximum engagement.
           </p>
           <div className="space-x-4">
-            <Button asChild size="lg">
-              <Link href="/metadata">
-                Extract Metadata
-                <ArrowRight className="ml-2 h-4 w-4" />
+            <Button
+              asChild
+              size="lg"
+              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+            >
+              <Link href="/script">
+                Start Writing
+                <MessageSquare className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link href="/analysis">
-                Analyze Content
-                <BarChart className="ml-2 h-4 w-4" />
+              <Link href="/features">
+                Learn More
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </div>
@@ -39,20 +53,43 @@ export default function Home() {
         <div className="container max-w-[85rem] space-y-6">
           <div className="mx-auto flex max-w-[58rem] flex-col items-center space-y-4 text-center">
             <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-5xl">
-              Features
+              All-in-One YouTube Toolkit
             </h2>
             <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-              Powerful tools to help you understand and improve your YouTube
+              Everything you need to create, optimize, and analyze your YouTube
               content
             </p>
           </div>
-          <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:max-w-[64rem]">
+          <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:grid-cols-3 md:max-w-[64rem]">
+            {/* Script Feature */}
+            <div className="relative overflow-hidden rounded-lg border bg-background p-2">
+              <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <FileText className="h-4 w-4" />
+                    <Badge variant="secondary">New</Badge>
+                  </div>
+                  <h3 className="font-bold">AI Script Assistant</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Create professional video scripts with AI guidance and
+                    real-time suggestions.
+                  </p>
+                  <Link
+                    href="/script"
+                    className="absolute inset-0 rounded-lg ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <span className="sr-only">Go to AI Script Assistant</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
             {/* Metadata Feature */}
             <div className="relative overflow-hidden rounded-lg border bg-background p-2">
               <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Search className="h-4 w-4" />
+                    <Sparkles className="h-4 w-4" />
                     <Link
                       href="/metadata"
                       className="text-sm underline-offset-4 hover:underline"
@@ -60,10 +97,10 @@ export default function Home() {
                       Try Now
                     </Link>
                   </div>
-                  <h3 className="font-bold">Metadata Extraction</h3>
+                  <h3 className="font-bold">Metadata Optimization</h3>
                   <p className="text-sm text-muted-foreground">
-                    Extract and analyze video metadata including title,
-                    description, tags, and statistics.
+                    Optimize your titles, descriptions, and tags for better
+                    visibility and engagement.
                   </p>
                 </div>
               </div>
@@ -74,7 +111,7 @@ export default function Home() {
               <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Zap className="h-4 w-4" />
+                    <BarChart className="h-4 w-4" />
                     <Link
                       href="/analysis"
                       className="text-sm underline-offset-4 hover:underline"
@@ -82,10 +119,10 @@ export default function Home() {
                       Try Now
                     </Link>
                   </div>
-                  <h3 className="font-bold">AI Analysis</h3>
+                  <h3 className="font-bold">Content Analysis</h3>
                   <p className="text-sm text-muted-foreground">
-                    Get AI-powered insights, SEO recommendations, and content
-                    optimization suggestions.
+                    Get AI-powered insights and performance analytics for your
+                    videos.
                   </p>
                 </div>
               </div>
@@ -99,15 +136,19 @@ export default function Home() {
         <div className="container max-w-[85rem]">
           <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center">
             <h2 className="font-bold text-3xl leading-[1.1] sm:text-3xl md:text-5xl">
-              Ready to optimize your content?
+              Ready to create better content?
             </h2>
             <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-lg sm:leading-7">
-              Start analyzing your YouTube videos today and get actionable
-              insights.
+              Start with our AI Script Assistant and transform your video ideas
+              into engaging content.
             </p>
             <div className="flex flex-col gap-4 min-[400px]:flex-row">
-              <Button asChild size="lg">
-                <Link href="/metadata">Get Started</Link>
+              <Button
+                asChild
+                size="lg"
+                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
+              >
+                <Link href="/script">Get Started with AI Script Assistant</Link>
               </Button>
             </div>
           </div>

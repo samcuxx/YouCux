@@ -3,14 +3,15 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Check, Copy, Download, Share2 } from "lucide-react";
+import { Check, Copy, Download, Share2, ExternalLink } from "lucide-react";
 import type { YouTubeVideoData } from "@/types/youtube";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface VideoMetadataDisplayProps {
   data: YouTubeVideoData;
@@ -42,12 +43,9 @@ export function VideoMetadataDisplay({ data }: VideoMetadataDisplayProps) {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "Not available";
-
     try {
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        return "Not available";
-      }
+      if (isNaN(date.getTime())) return "Not available";
       return new Intl.DateTimeFormat("en-US", {
         year: "numeric",
         month: "short",
@@ -59,202 +57,181 @@ export function VideoMetadataDisplay({ data }: VideoMetadataDisplayProps) {
   };
 
   return (
-    <TooltipProvider>
-      <div className="rounded-xl border bg-card shadow-sm min-h-[600px] h-[calc(100vh-14rem)]">
-        <div className="flex flex-col lg:flex-row h-full">
-          {/* Thumbnail Section - Fixed */}
-          <div className="lg:w-2/5 p-4 sm:p-5 lg:p-6 border-b lg:border-b-0 lg:border-r lg:overflow-y-auto thin-scrollbar">
-            <div className="space-y-4 sm:space-y-5 lg:space-y-6 max-w-xl mx-auto lg:max-w-none">
-              <div className="relative aspect-video rounded-lg overflow-hidden group">
-                <Image
-                  src={data.thumbnails.maxres?.url || data.thumbnails.high.url}
-                  alt={data.title}
-                  fill
-                  className="object-cover transition-transform group-hover:scale-105"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  priority
-                />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex items-center justify-center">
+    <div className="grid gap-4 md:gap-6 lg:gap-8">
+      {/* Main Content Card */}
+      <Card className="overflow-hidden">
+        <CardHeader className="p-0">
+          <div className="relative aspect-video w-full">
+            <Image
+              src={data.thumbnails.maxres?.url || data.thumbnails.high.url}
+              alt={data.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">
+                {data.title}
+              </h1>
+              <div className="flex items-center gap-3 text-white/90">
+                <span className="text-sm">
+                  {parseInt(data.viewCount).toLocaleString()} views
+                </span>
+                <span className="text-sm">•</span>
+                <span className="text-sm">{formatDate(data.publishedAt)}</span>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6">
+          {/* Quick Actions */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={downloadThumbnail}
+              className="flex-1 sm:flex-none"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download Thumbnail
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                copyToClipboard(
+                  `https://youtube.com/watch?v=${data.videoId}`,
+                  "url"
+                )
+              }
+              className="flex-1 sm:flex-none"
+            >
+              {copiedField === "url" ? (
+                <Check className="h-4 w-4 mr-2" />
+              ) : (
+                <Share2 className="h-4 w-4 mr-2" />
+              )}
+              {copiedField === "url" ? "Copied!" : "Share Link"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="flex-1 sm:flex-none"
+            >
+              <a
+                href={`https://youtube.com/watch?v=${data.videoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Open in YouTube
+              </a>
+            </Button>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-muted/50">
+              <CardContent className="p-4 text-center">
+                <CardDescription>Views</CardDescription>
+                <CardTitle className="text-xl">
+                  {parseInt(data.viewCount).toLocaleString()}
+                </CardTitle>
+              </CardContent>
+            </Card>
+            <Card className="bg-muted/50">
+              <CardContent className="p-4 text-center">
+                <CardDescription>Likes</CardDescription>
+                <CardTitle className="text-xl">
+                  {parseInt(data.likeCount).toLocaleString()}
+                </CardTitle>
+              </CardContent>
+            </Card>
+            <Card className="bg-muted/50">
+              <CardContent className="p-4 text-center">
+                <CardDescription>Comments</CardDescription>
+                <CardTitle className="text-xl">
+                  {parseInt(data.commentCount).toLocaleString()}
+                </CardTitle>
+              </CardContent>
+            </Card>
+            <Card className="bg-muted/50">
+              <CardContent className="p-4 text-center">
+                <CardDescription>Published</CardDescription>
+                <CardTitle className="text-xl">
+                  {formatDate(data.publishedAt)}
+                </CardTitle>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Description */}
+          <Card className="mb-6">
+            <CardHeader className="p-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Description</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    copyToClipboard(data.description, "description")
+                  }
+                >
+                  {copiedField === "description" ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                {data.description}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Tags */}
+          {data.tags && data.tags.length > 0 && (
+            <Card>
+              <CardHeader className="p-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Tags</CardTitle>
                   <Button
-                    variant="secondary"
+                    variant="ghost"
                     size="sm"
-                    onClick={downloadThumbnail}
+                    onClick={() =>
+                      copyToClipboard(data.tags.join(", "), "tags")
+                    }
                   >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Thumbnail
+                    {copiedField === "tags" ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
-              </div>
-
-              <div className="flex gap-2 sm:gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 text-xs sm:text-sm"
-                  onClick={downloadThumbnail}
-                >
-                  <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                  <span className="sm:hidden">Download Thumbnail</span>
-                  <span className="hidden sm:inline">Download JSON</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 text-xs sm:text-sm"
-                  onClick={() => copyToClipboard(`https://youtube.com/watch?v=${data.videoId}`, "url")}
-                >
-                  <Share2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
-                  {copiedField === "url" ? "Copied!" : "Share"}
-                </Button>
-              </div>
-
-              {/* Stats Section */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-                <div className="rounded-lg bg-muted/50 p-3 text-center">
-                  <p className="text-lg font-semibold tracking-tight">
-                    {parseInt(data.viewCount).toLocaleString()}
-                  </p>
-                  <h4 className="text-xs font-medium text-muted-foreground mt-1">
-                    Views
-                  </h4>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <div className="flex flex-wrap gap-2">
+                  {data.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
-                <div className="rounded-lg bg-muted/50 p-3 text-center">
-                  <p className="text-lg font-semibold tracking-tight">
-                    {parseInt(data.likeCount).toLocaleString()}
-                  </p>
-                  <h4 className="text-xs font-medium text-muted-foreground mt-1">
-                    Likes
-                  </h4>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-3 text-center">
-                  <p className="text-lg font-semibold tracking-tight">
-                    {parseInt(data.commentCount).toLocaleString()}
-                  </p>
-                  <h4 className="text-xs font-medium text-muted-foreground mt-1">
-                    Comments
-                  </h4>
-                </div>
-                <div className="rounded-lg bg-muted/50 p-3 text-center">
-                  <p className="text-lg font-semibold tracking-tight">
-                    {formatDate(data.publishedAt)}
-                  </p>
-                  <h4 className="text-xs font-medium text-muted-foreground mt-1">
-                    Published
-                  </h4>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Metadata Section - Scrollable */}
-          <div className="flex-1 p-4 sm:p-5 lg:p-6 lg:overflow-y-auto thin-scrollbar">
-            <div className="space-y-4 sm:space-y-5 lg:space-y-6 max-w-xl mx-auto lg:max-w-none">
-              {/* Title Card */}
-              <div className="rounded-lg border bg-card/50 p-3 sm:p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Title
-                  </h3>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyToClipboard(data.title, "title")}
-                      >
-                        {copiedField === "title" ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Copy title</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <p className="text-lg font-medium leading-relaxed">
-                  {data.title}
-                </p>
-              </div>
-
-              {/* Description Card */}
-              <div className="rounded-lg border bg-card/50 p-3 sm:p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    Description
-                  </h3>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          copyToClipboard(data.description, "description")
-                        }
-                      >
-                        {copiedField === "description" ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Copy description</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <p className="whitespace-pre-wrap">{data.description}</p>
-                </div>
-              </div>
-
-              {/* Tags Card */}
-              {data.tags && data.tags.length > 0 && (
-                <div className="rounded-lg border bg-card/50 p-3 sm:p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium text-muted-foreground">
-                      Tags
-                    </h3>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            copyToClipboard(data.tags.join(", "), "tags")
-                          }
-                        >
-                          {copiedField === "tags" ? (
-                            <Check className="h-4 w-4" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Copy all tags</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {data.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </TooltipProvider>
+              </CardContent>
+            </Card>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

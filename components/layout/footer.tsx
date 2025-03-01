@@ -3,6 +3,7 @@ import { Youtube } from "lucide-react";
 
 const footerLinks = {
   product: [
+    { name: "Script", href: "/script" },
     { name: "Metadata", href: "/metadata" },
     { name: "Analysis", href: "/analysis" },
     { name: "Features", href: "/features" },
