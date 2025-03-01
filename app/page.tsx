@@ -6,6 +6,7 @@ import {
   FileText,
   MessageSquare,
   Sparkles,
+  Youtube,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -60,7 +61,7 @@ export default function Home() {
               content
             </p>
           </div>
-          <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:grid-cols-3 md:max-w-[64rem]">
+          <div className="mx-auto grid justify-center gap-4 sm:grid-cols-2 md:grid-cols-4 md:max-w-[85rem]">
             {/* Script Feature */}
             <div className="relative overflow-hidden rounded-lg border bg-background p-2">
               <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
@@ -79,6 +80,29 @@ export default function Home() {
                     className="absolute inset-0 rounded-lg ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   >
                     <span className="sr-only">Go to AI Script Assistant</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* Channel Feature */}
+            <div className="relative overflow-hidden rounded-lg border bg-background p-2">
+              <div className="flex h-[180px] flex-col justify-between rounded-md p-6">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Youtube className="h-4 w-4" />
+                    <Badge variant="secondary">New</Badge>
+                  </div>
+                  <h3 className="font-bold">Channel Analysis</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Get detailed insights about any YouTube channel, including
+                    stats, top videos, and more.
+                  </p>
+                  <Link
+                    href="/channel"
+                    className="absolute inset-0 rounded-lg ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <span className="sr-only">Go to Channel Analysis</span>
                   </Link>
                 </div>
               </div>
