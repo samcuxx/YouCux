@@ -1,73 +1,74 @@
 import { google } from "googleapis";
+import { NextResponse } from "next/server";
 
 const youtube = google.youtube("v3");
 
-export interface YouTubeChannelData {
-  name: string;
-  subscribers: string;
-  totalViews: string;
-  description: string;
-  thumbnails: {
-    default: string;
-    medium: string;
-    high: string;
-  };
-  bannerUrl: string;
-  publishedAt: string;
-  country: string;
-  customUrl: string;
-  topVideos: {
-    title: string;
-    views: string;
-    likes: string;
-    comments: string;
-    thumbnail: string;
-    publishedAt: string;
-    duration: string;
-  }[];
-  tags: string[];
-  topics: string[];
+// Simple in-memory cache with 1-hour expiration
+interface CacheEntry {
+  data: unknown;
+  timestamp: number;
 }
 
-export async function getChannelData(
-  channelUrl: string
-): Promise<YouTubeChannelData> {
-  if (!process.env.YOUTUBE_API_KEY) {
-    throw new Error("YouTube API key is not configured");
-  }
+const cache = new Map<string, CacheEntry>();
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
 
-  // Extract channel ID or handle from URL
-  const channelIdentifier = extractChannelIdentifier(channelUrl);
-
-  if (!channelIdentifier) {
-    throw new Error("Invalid YouTube channel URL");
-  }
-
+export async function POST(request: Request) {
   try {
-    // Get channel details using the most efficient method
+    const { channelUrl } = await request.json();
+
+    if (!channelUrl) {
+      return NextResponse.json(
+        { error: "Channel URL is required" },
+        { status: 400 }
+      );
+    }
+
+    // Check cache first
+    const cacheKey = channelUrl.toLowerCase().trim();
+    const cachedData = cache.get(cacheKey);
+
+    if (cachedData && Date.now() - cachedData.timestamp < CACHE_DURATION) {
+      console.log("Returning cached data for:", channelUrl);
+      return NextResponse.json(cachedData.data);
+    }
+
+    // Extract channel ID or handle from URL
+    const channelIdentifier = extractChannelIdentifier(channelUrl);
+
+    if (!channelIdentifier) {
+      return NextResponse.json(
+        { error: "Invalid YouTube channel URL" },
+        { status: 400 }
+      );
+    }
+
+    // Get channel details
     const channel = await findChannel(channelIdentifier);
 
     if (!channel) {
-      throw new Error(`Channel not found: ${channelIdentifier}`);
+      return NextResponse.json(
+        { error: `Channel not found: ${channelIdentifier}` },
+        { status: 404 }
+      );
     }
 
-    // Get channel's top videos (limit to 5 for faster loading)
+    // Get channel's top videos
     const topVideos = await getTopVideos(channel.id!, 5);
 
-    // Extract topics from topicDetails
+    // Extract topics and tags
     const topics =
       channel.topicDetails?.topicCategories
         ?.map((topic) => topic.split("/").pop()?.replace(/_/g, " ") || "")
         .filter(Boolean) || [];
 
-    // Extract tags from channel keywords
     const tags =
       channel.brandingSettings?.channel?.keywords
         ?.split(",")
         .map((tag) => tag.trim())
         .filter((tag) => tag.length > 0) || [];
 
-    return {
+    // Format the response
+    const channelData = {
       name: channel.snippet?.title || "",
       subscribers: formatNumber(channel.statistics?.subscriberCount || "0"),
       totalViews: formatNumber(channel.statistics?.viewCount || "0"),
@@ -79,25 +80,47 @@ export async function getChannelData(
       },
       bannerUrl: channel.brandingSettings?.image?.bannerExternalUrl || "",
       publishedAt: formatDate(channel.snippet?.publishedAt || ""),
-      country: channel.snippet?.country || "",
       customUrl: channel.snippet?.customUrl || `@${channelIdentifier}`,
       topVideos,
       tags,
       topics,
     };
+
+    // Store in cache
+    cache.set(cacheKey, {
+      data: channelData,
+      timestamp: Date.now(),
+    });
+
+    return NextResponse.json(channelData);
   } catch (error) {
     console.error("YouTube API Error:", error);
-    throw new Error(
-      error instanceof Error ? error.message : "Failed to fetch channel data"
-    );
+    const message =
+      error instanceof Error ? error.message : "Failed to fetch channel data";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
-// Helper function to find a channel using multiple methods
+// Helper functions
+function extractChannelIdentifier(url: string): string {
+  url = url.trim().toLowerCase();
+  const patterns = {
+    handle: /@([^/?]+)/,
+    channelId: /channel\/(UC[\w-]+)/,
+    user: /user\/([^/?]+)/,
+    customUrl: /youtube\.com\/([^/?]+)/,
+  };
+
+  for (const [, pattern] of Object.entries(patterns)) {
+    const match = url.match(pattern);
+    if (match) return match[1].replace("@", "");
+  }
+
+  return url.replace(/^@/, "").split("/").pop() || url;
+}
+
 async function findChannel(identifier: string) {
-  // Try different methods to find the channel
   const methods = [
-    // Method 1: Try by channel ID if it looks like a channel ID
     ...(identifier.startsWith("UC")
       ? [
           () =>
@@ -113,16 +136,12 @@ async function findChannel(identifier: string) {
             }),
         ]
       : []),
-
-    // Method 2: Try by username
     () =>
       youtube.channels.list({
         key: process.env.YOUTUBE_API_KEY,
         part: ["snippet", "statistics", "topicDetails", "brandingSettings"],
         forUsername: identifier,
       }),
-
-    // Method 3: Search for the channel
     async () => {
       const searchResponse = await youtube.search.list({
         key: process.env.YOUTUBE_API_KEY,
@@ -132,14 +151,10 @@ async function findChannel(identifier: string) {
         maxResults: 1,
       });
 
-      if (!searchResponse.data.items?.length) {
-        return { data: { items: [] } };
-      }
+      if (!searchResponse.data.items?.length) return { data: { items: [] } };
 
       const channelId = searchResponse.data.items[0].id?.channelId;
-      if (!channelId) {
-        return { data: { items: [] } };
-      }
+      if (!channelId) return { data: { items: [] } };
 
       return youtube.channels.list({
         key: process.env.YOUTUBE_API_KEY,
@@ -149,21 +164,16 @@ async function findChannel(identifier: string) {
     },
   ];
 
-  // Try each method until we find the channel
   for (const method of methods) {
     const response = await method();
-    if (response.data.items?.length) {
-      return response.data.items[0];
-    }
+    if (response.data.items?.length) return response.data.items[0];
   }
 
   return null;
 }
 
-// Helper function to get top videos for a channel
-async function getTopVideos(channelId: string, maxResults: number = 10) {
+async function getTopVideos(channelId: string, maxResults: number = 5) {
   try {
-    // Get channel's top videos
     const videosResponse = await youtube.search.list({
       key: process.env.YOUTUBE_API_KEY,
       part: ["snippet"],
@@ -173,18 +183,13 @@ async function getTopVideos(channelId: string, maxResults: number = 10) {
       type: ["video"],
     });
 
-    if (!videosResponse.data.items?.length) {
-      return [];
-    }
+    if (!videosResponse.data.items?.length) return [];
 
-    // Get detailed video statistics in a single batch request
     const videoIds = videosResponse.data.items
       .map((item) => item.id?.videoId)
       .filter(Boolean) as string[];
 
-    if (!videoIds.length) {
-      return [];
-    }
+    if (!videoIds.length) return [];
 
     const videoStatsResponse = await youtube.videos.list({
       key: process.env.YOUTUBE_API_KEY,
@@ -192,7 +197,6 @@ async function getTopVideos(channelId: string, maxResults: number = 10) {
       id: videoIds,
     });
 
-    // Map video data with stats
     return (
       videosResponse.data.items?.map((video) => {
         const stats = videoStatsResponse.data.items?.find(
@@ -212,27 +216,8 @@ async function getTopVideos(channelId: string, maxResults: number = 10) {
     );
   } catch (error) {
     console.error("Error fetching top videos:", error);
-    return []; // Return empty array instead of failing
+    return [];
   }
-}
-
-function extractChannelIdentifier(url: string): string {
-  url = url.trim().toLowerCase();
-  const patterns = {
-    handle: /@([^/?]+)/,
-    channelId: /channel\/(UC[\w-]+)/,
-    user: /user\/([^/?]+)/,
-    customUrl: /youtube\.com\/([^/?]+)/,
-  };
-
-  const patternEntries = Object.entries(patterns);
-  for (let i = 0; i < patternEntries.length; i++) {
-    const pattern = patternEntries[i][1];
-    const match = url.match(pattern);
-    if (match) return match[1].replace("@", "");
-  }
-
-  return url.replace(/^@/, "").split("/").pop() || url;
 }
 
 function formatNumber(num: string): string {
@@ -267,42 +252,4 @@ function formatDuration(duration: string): string {
   parts.push(seconds.padStart(2, "0") || "00");
 
   return parts.join(":");
-}
-
-export function isValidYouTubeUrl(url: string): boolean {
-  if (!url) return false;
-
-  const patterns = [
-    /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/i,
-    /^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=[\w-]+/i,
-    /^(https?:\/\/)?(www\.)?youtu\.be\/[\w-]+/i,
-    /^(https?:\/\/)?(www\.)?youtube\.com\/shorts\/[\w-]+/i,
-  ];
-
-  return patterns.some((pattern) => pattern.test(url));
-}
-
-export function extractVideoId(url: string): string | null {
-  if (!url) return null;
-
-  // Clean the URL
-  url = url.trim();
-
-  // Regular expressions for different YouTube URL formats
-  const patterns = {
-    standard: /(?:youtube\.com\/watch\?v=)([\w-]+)/i,
-    shortened: /(?:youtu\.be\/)([\w-]+)/i,
-    embed: /(?:youtube\.com\/embed\/)([\w-]+)/i,
-    shorts: /(?:youtube\.com\/shorts\/)([\w-]+)/i,
-    v: /[?&]v=([\w-]+)/i,
-  };
-
-  for (const [_, pattern] of Object.entries(patterns)) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      return match[1];
-    }
-  }
-
-  return null;
 }

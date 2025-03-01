@@ -17,6 +17,12 @@ import { MobileNav } from "./mobile-nav";
 const navigation = {
   main: [
     {
+      title: "Channel",
+      href: "/channel",
+      description: "Get AI-powered insights about your YouTube channel",
+      icon: Youtube,
+    },
+    {
       title: "Script",
       href: "/script",
       description: "Create engaging YouTube video scripts with AI assistance",

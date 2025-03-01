@@ -42,7 +42,7 @@ YouCux is a sophisticated content optimization platform that leverages AI to hel
 - **Styling**: Tailwind CSS
 - **UI Components**: Shadcn/UI
 - **APIs**:
-  - YouTube Data API
+- YouTube Data API
   - Azure OpenAI
 - **State Management**: React Hooks
 - **Animations**: Framer Motion

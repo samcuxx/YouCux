@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VideoMetadataDisplay } from "@/components/features/metadata/video-metadata-display";
 import { VideoMetadataSkeleton } from "@/components/features/metadata/video-metadata-skeleton";
-import { isValidYouTubeUrl } from "@/lib/youtube";
+import { isValidYouTubeUrl } from "@/lib/youtube-utils";
 import type { YouTubeVideoData } from "@/types/youtube";
 import { motion, AnimatePresence } from "framer-motion";
 
